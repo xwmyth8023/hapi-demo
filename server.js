@@ -1,32 +1,50 @@
 'use strict';
+
 require('env2')('./.env');
-
 const Hapi = require('hapi');
+const mongoose = require('mongoose');
+const DogController =  require('./src/controller/dog');
+const MongoDBUrl = 'mongodb://localhost:27017/dogapi';
 
-const init = async () => {
+const server = new Hapi.server({
+    port:3000,
+    host: 'localhost'
+})
 
-    const server = Hapi.server({
-        port: 3000,
-        host: 'localhost'
-    });
+server.route({
+    method:'GET',
+    path: '/dogs',
+    handler: DogController.list
+})
 
-    server.route({
-        method: 'GET',
-        path:'/',
-        handler: (request, h) => {
+server.route({
+    method: 'POST',
+    path: '/dogs',
+    handler: DogController.create
+})
+  
+server.route({
+    method: 'PUT',
+    path: '/dogs/{id}',
+    handler: DogController.update
+})
+  
+server.route({
+    method: 'DELETE',
+    path: '/dogs/{id}',
+    handler: DogController.remove
+})
 
-            return process.env.PORT;
-        }
-    });
-
-    await server.start();
-    console.log('Server running on %ss', server.info.uri);
+const startServer = async function(){
+    try {  
+        await server.start();
+        // Once started, connect to Mongo through Mongoose
+        mongoose.connect(MongoDBUrl, {}).then(() => { console.log(`Connected to Mongo server`) }, err => { console.log(err) });
+        console.log(`Server running at: ${server.info.uri}`);
+    }
+    catch (err) {  
+        console.log(err)
+    }
 };
 
-process.on('unhandledRejection', (err) => {
-
-    console.log(err);
-    process.exit(1);
-});
-
-init();
+startServer()
